@@ -912,6 +912,28 @@
             background: #FEE2E2;
         }
 
+        .record-edit {
+            position: absolute;
+            top: 10px;
+            right: 44px;
+            background: #EFF6FF;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            color: #3B82F6;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .record-edit:hover {
+            background: #DBEAFE;
+        }
+
         /* 冥想记录样式 */
         .meditation-record-item {
             background: linear-gradient(135deg, #F0F9FF, #E0F2FE);
@@ -1092,7 +1114,7 @@
                 <span>🌱</span><span>播种</span>
             </button>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <button class="btn btn-secondary" onclick="app.startMeditation()">
+                <button class="btn btn-secondary" onclick="app.openMeditationTimeModal()">
                     <span>☕</span><span>冥想</span>
                 </button>
                 <button class="btn btn-secondary btn-small" onclick="app.openMeditationHistoryModal()">
@@ -1205,6 +1227,97 @@
                 <div class="record-list" id="meditationHistoryList"></div>
                 <div class="pagination" id="meditationHistoryPagination"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- 编辑善行记录模态框 -->
+    <div class="modal" id="editRecordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">✏️ 编辑善行记录</h2>
+                <button class="modal-close" onclick="app.closeModal('editRecordModal')">&times;</button>
+            </div>
+            <form id="editRecordForm" onsubmit="app.saveRecordEdit(event)">
+                <input type="hidden" id="editRecordId">
+                <div class="form-group">
+                    <label class="form-label">选择目标</label>
+                    <select class="form-select" id="editRecordGoal" required></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">业力伙伴</label>
+                    <input type="text" class="form-input" id="editRecordPartner" placeholder="帮助谁？" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">善行描述</label>
+                    <textarea class="form-textarea" id="editRecordAction" placeholder="为TA做了什么..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">💾 保存修改</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑冥想记录模态框 -->
+    <div class="modal" id="editMeditationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">✏️ 编辑冥想记录</h2>
+                <button class="modal-close" onclick="app.closeModal('editMeditationModal')">&times;</button>
+            </div>
+            <form id="editMeditationForm" onsubmit="app.saveMeditationEdit(event)">
+                <input type="hidden" id="editMeditationId">
+                <div class="form-group">
+                    <label class="form-label">冥想时长（秒）</label>
+                    <input type="number" class="form-input" id="editMeditationDuration" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">记录时间</label>
+                    <input type="datetime-local" class="form-input" id="editMeditationTime" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">💾 保存修改</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 冥想时间设置模态框 -->
+    <div class="modal" id="meditationTimeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">⏱️ 设置冥想时间</h2>
+                <button class="modal-close" onclick="app.closeModal('meditationTimeModal')">&times;</button>
+            </div>
+            <div style="display: grid; gap: 12px;">
+                <button class="btn btn-primary" onclick="app.startMeditationWithTime(300)">
+                    <span>☕</span><span>5 分钟</span>
+                </button>
+                <button class="btn btn-primary" onclick="app.startMeditationWithTime(600)">
+                    <span>☕</span><span>10 分钟</span>
+                </button>
+                <button class="btn btn-primary" onclick="app.startMeditationWithTime(900)">
+                    <span>☕</span><span>15 分钟</span>
+                </button>
+                <button class="btn btn-secondary" onclick="app.openCustomRandomModal()">
+                    <span>🎲</span><span>自定义随机时间</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定义随机时间模态框 -->
+    <div class="modal" id="customRandomModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🎲 自定义冥想时间</h2>
+                <button class="modal-close" onclick="app.closeModal('customRandomModal')">&times;</button>
+            </div>
+            <form onsubmit="app.startMeditationWithCustomRandom(event)">
+                <div class="form-group">
+                    <label class="form-label">冥想时间（分钟）</label>
+                    <input type="number" class="form-input" id="customMinutes" min="1" max="120" placeholder="输入分钟数" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <span>☕</span><span>开始冥想</span>
+                </button>
+            </form>
         </div>
     </div>
 
@@ -1618,6 +1731,7 @@
                     return `
                         <div class="record-item">
                             <button class="record-delete" onclick="app.deleteRecord('${r.id}')" title="删除记录">&times;</button>
+                            <button class="record-edit" onclick="app.openEditRecordModal('${r.id}')" title="编辑记录">✏️</button>
                             <div class="record-date">${dateStr}</div>
                             <div class="record-partner">👤 帮助 ${r.partner}</div>
                             <div class="record-action">${r.action}</div>
@@ -1668,6 +1782,57 @@
                 this.renderHistoryList();
             }
 
+            // 打开编辑善行记录模态框
+            openEditRecordModal(recordId) {
+                const record = this.data.records.find(r => r.id == recordId);
+                if (!record) return;
+
+                document.getElementById('editRecordId').value = record.id;
+                document.getElementById('editRecordPartner').value = record.partner;
+                document.getElementById('editRecordAction').value = record.action;
+
+                const select = document.getElementById('editRecordGoal');
+                select.innerHTML = this.data.goals.map(g =>
+                    `<option value="${g.id}" ${g.id === record.goalId ? 'selected' : ''}>${g.title}</option>`
+                ).join('');
+
+                this.openModal('editRecordModal');
+            }
+
+            // 保存善行记录编辑
+            saveRecordEdit(event) {
+                event.preventDefault();
+
+                const recordId = parseInt(document.getElementById('editRecordId').value);
+                const goalId = document.getElementById('editRecordGoal').value;
+                const partner = document.getElementById('editRecordPartner').value.trim();
+                const action = document.getElementById('editRecordAction').value.trim();
+
+                const record = this.data.records.find(r => r.id == recordId);
+                if (!record) return;
+
+                // 如果目标改变了，需要更新原目标和新目标的growth
+                if (record.goalId !== goalId) {
+                    const oldGoal = this.data.goals.find(g => g.id === record.goalId);
+                    if (oldGoal) {
+                        oldGoal.growth = Math.max(0, oldGoal.growth - 1);
+                    }
+                    const newGoal = this.data.goals.find(g => g.id === goalId);
+                    if (newGoal) {
+                        newGoal.growth += 1;
+                    }
+                }
+
+                record.goalId = goalId;
+                record.partner = partner;
+                record.action = action;
+
+                this.saveData();
+                this.render();
+                this.renderHistoryList();
+                this.closeModal('editRecordModal');
+            }
+
             // 打开冥想历史记录
             openMeditationHistoryModal() {
                 this.meditationHistoryPage = 0;
@@ -1704,6 +1869,8 @@
 
                     return `
                         <div class="meditation-record-item">
+                            <button class="record-delete" onclick="app.deleteMeditation('${r.id}')" title="删除记录">&times;</button>
+                            <button class="record-edit" onclick="app.openEditMeditationModal('${r.id}')" title="编辑记录">✏️</button>
                             <div class="meditation-record-date">${dateStr}</div>
                             <div class="meditation-record-duration">☕ 冥想时长：${minutes}分${seconds}秒</div>
                             <div class="meditation-record-streak">🔥 连续冥想：${r.streakDays} 天</div>
@@ -1734,6 +1901,92 @@
                     this.meditationHistoryPage++;
                     this.renderMeditationHistoryList();
                 }
+            }
+
+            // 删除冥想记录
+            deleteMeditation(meditationId) {
+                if (!confirm('确定要删除这条冥想记录吗？')) return;
+                this.data.meditations = this.data.meditations.filter(m => m.id != meditationId);
+                this.saveData();
+                this.renderMeditationHistoryList();
+            }
+
+            // 打开编辑冥想记录模态框
+            openEditMeditationModal(meditationId) {
+                const meditation = this.data.meditations.find(m => m.id == meditationId);
+                if (!meditation) return;
+
+                document.getElementById('editMeditationId').value = meditation.id;
+                document.getElementById('editMeditationDuration').value = meditation.duration;
+
+                // 转换时间为datetime-local格式
+                const date = new Date(meditation.createdAt);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                document.getElementById('editMeditationTime').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+                this.openModal('editMeditationModal');
+            }
+
+            // 保存冥想记录编辑
+            saveMeditationEdit(event) {
+                event.preventDefault();
+
+                const meditationId = parseInt(document.getElementById('editMeditationId').value);
+                const duration = parseInt(document.getElementById('editMeditationDuration').value);
+                const timeStr = document.getElementById('editMeditationTime').value;
+
+                const meditation = this.data.meditations.find(m => m.id == meditationId);
+                if (!meditation) return;
+
+                meditation.duration = duration;
+                meditation.createdAt = new Date(timeStr).getTime();
+
+                this.saveData();
+                this.renderMeditationHistoryList();
+                this.closeModal('editMeditationModal');
+            }
+
+            // 打开冥想时间选择模态框
+            openMeditationTimeModal() {
+                this.openModal('meditationTimeModal');
+            }
+
+            // 带指定时间开始冥想
+            startMeditationWithTime(seconds) {
+                this.prepareMeditationText();
+                this.meditationTimeLeft = seconds;
+                this.meditationStartTime = Date.now();
+                this.closeModal('meditationTimeModal');
+                document.getElementById('meditationRoom').classList.add('active');
+                this.updateTimerDisplay();
+                this.startTimer();
+            }
+
+            // 打开自定义随机时间模态框
+            openCustomRandomModal() {
+                this.closeModal('meditationTimeModal');
+                this.openModal('customRandomModal');
+            }
+
+            // 自定义冥想时间开始冥想
+            startMeditationWithCustomRandom(event) {
+                event.preventDefault();
+
+                const minutes = parseInt(document.getElementById('customMinutes').value);
+
+                if (minutes < 1 || minutes > 120) {
+                    alert('请输入 1-120 分钟之间的时间！');
+                    return;
+                }
+
+                const seconds = minutes * 60;
+
+                this.closeModal('customRandomModal');
+                this.startMeditationWithTime(seconds);
             }
 
             openModal(modalId) {
