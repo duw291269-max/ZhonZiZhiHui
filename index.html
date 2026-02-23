@@ -1,0 +1,3552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>种子智慧 SeedLab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-wealth: #FFD700;
+            --primary-relation: #FF69B4;
+            --primary-health: #32CD32;
+            --primary-wisdom: #9370DB;
+            --bg-warm: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 30%, #FFE5B4 70%, #FFDAB9 100%);
+            --bg-cold: linear-gradient(180deg, #696969 0%, #808080 30%, #A9A9A9 70%, #C0C0C0 100%);
+            --text-dark: #2C1810;
+            --text-light: #F5F5F5;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            background: var(--bg-warm);
+            color: var(--text-dark);
+            transition: background 1s ease;
+            overflow-x: hidden;
+        }
+
+        body.cold-weather {
+            background: var(--bg-cold);
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px 16px 200px;
+            min-height: 100vh;
+        }
+
+        /* 顶部天气状态 */
+        .weather-status {
+            text-align: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .weather-icon {
+            font-size: 28px;
+        }
+
+        .weather-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #5D4E37;
+        }
+
+        /* 虚拟花园 */
+        .garden {
+            min-height: 360px;
+            border-radius: 24px;
+            padding: 0;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        /* 天空背景 */
+        .garden-sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 65%;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            transition: background 1s ease;
+        }
+
+        body.cold-weather .garden-sky {
+            background: linear-gradient(180deg, #708090 0%, #B0C4DE 100%);
+        }
+
+        /* 土壤层 */
+        .garden-soil {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 38%;
+        }
+
+        .soil-grass {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 18px;
+            background: linear-gradient(180deg, #228B22 0%, #32CD32 50%, #228B22 100%);
+        }
+
+        .soil-grass::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 0;
+            right: 0;
+            height: 15px;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent 0px,
+                transparent 8px,
+                #32CD32 8px,
+                #32CD32 10px,
+                transparent 10px,
+                transparent 12px
+            );
+        }
+
+        .soil-dirt {
+            position: absolute;
+            top: 18px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg,
+                #8B4513 0%,
+                #A0522D 20%,
+                #6B3E0A 60%,
+                #4A2C0A 100%
+            );
+        }
+
+        .soil-particles {
+            position: absolute;
+            top: 22px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                radial-gradient(circle, #6B3E0A 1px, transparent 1px),
+                radial-gradient(circle, #5D3A0A 1px, transparent 1px);
+            background-size: 20px 20px, 30px 30px;
+            background-position: 0 0, 10px 10px;
+            opacity: 0.3;
+        }
+
+        /* 土壤记忆层 - 化石般的记忆痕迹 */
+        .soil-memory-layer {
+            position: absolute;
+            top: 25px;
+            left: 5%;
+            right: 5%;
+            bottom: 10px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .memory-stone {
+            position: absolute;
+            background: radial-gradient(ellipse at 30% 30%, rgba(139, 90, 43, 0.6), rgba(74, 44, 10, 0.4));
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            opacity: 0.4;
+            filter: blur(1px);
+            animation: stone-settle 2s ease-out forwards;
+        }
+
+        .memory-stone::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            right: 20%;
+            bottom: 20%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent);
+        }
+
+        @keyframes stone-settle {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px) scale(1.1);
+            }
+            100% {
+                opacity: 0.4;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* 肥力计数器 */
+        .fertility-counter {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(139, 90, 43, 0.7);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.85);
+            z-index: 5;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .fertility-icon {
+            font-size: 12px;
+        }
+
+        .fertility-count {
+            font-weight: 700;
+            color: #98D8AA;
+        }
+
+        /* 植物 */
+        .plant {
+            position: absolute;
+            transition: all 0.5s ease;
+            animation: breathe 3s ease-in-out infinite;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* 种子阶段 - 在土壤中 */
+        .plant.plant-seed-wrapper {
+            bottom: 22%;
+            animation: none;
+        }
+
+        /* 破土阶段 - 从土里长出 */
+        .plant.plant-sprout-wrapper {
+            bottom: 30%;
+        }
+
+        /* 抽叶阶段 */
+        .plant.plant-leaf-wrapper {
+            bottom: 32%;
+        }
+
+        /* 开花阶段 */
+        .plant.plant-flower-wrapper {
+            bottom: 32%;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1) rotate(-1deg); }
+            50% { transform: scale(1.03) rotate(1deg); }
+        }
+
+        .plant.withered {
+            filter: grayscale(100%);
+            animation: none;
+        }
+
+        /* 种子 */
+        .plant-seed {
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(ellipse at 30% 30%, #D2691E, #8B4513, #5D3A0A);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        /* 种子埋在土里的效果 */
+        .plant-seed::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -2px;
+            right: -2px;
+            bottom: -4px;
+            background: linear-gradient(180deg, #8B4513, #6B3E0A);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.7;
+        }
+
+        /* 破土 */
+        .plant-sprout {
+            width: 40px;
+            height: 50px;
+            position: relative;
+        }
+
+        .sprout-stem {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 25px;
+            background: linear-gradient(to top, #8B4513, #228B22);
+            border-radius: 3px;
+        }
+
+        .sprout-leaf {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 25px;
+            height: 20px;
+            background: linear-gradient(135deg, #32CD32, #228B22);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        }
+
+        /* 抽叶 */
+        .plant-leaf {
+            width: 50px;
+            height: 70px;
+            position: relative;
+        }
+
+        .leaf-stem {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 35px;
+            background: linear-gradient(to top, #8B4513, #228B22);
+            border-radius: 4px;
+        }
+
+        .leaf-main {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 35px;
+            background: var(--leaf-color, linear-gradient(135deg, #228B22, #32CD32));
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        }
+
+        .leaf-left {
+            position: absolute;
+            bottom: 38px;
+            left: 8px;
+            width: 22px;
+            height: 28px;
+            background: var(--leaf-color, linear-gradient(135deg, #228B22, #32CD32));
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            transform: rotate(-40deg);
+        }
+
+        .leaf-right {
+            position: absolute;
+            bottom: 38px;
+            right: 8px;
+            width: 22px;
+            height: 28px;
+            background: var(--leaf-color, linear-gradient(135deg, #228B22, #32CD32));
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            transform: rotate(40deg);
+        }
+
+        /* 开花 */
+        .plant-flower {
+            width: 65px;
+            height: 90px;
+            position: relative;
+        }
+
+        .flower-stem {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 50px;
+            background: linear-gradient(to top, #8B4513, #228B22);
+            border-radius: 5px;
+        }
+
+        .flower-petals {
+            position: absolute;
+            bottom: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 50px;
+        }
+
+        .petal {
+            position: absolute;
+            width: 20px;
+            height: 25px;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .petal:nth-child(1) { transform: translate(-50%, -50%) rotate(0deg) translateY(-15px); }
+        .petal:nth-child(2) { transform: translate(-50%, -50%) rotate(72deg) translateY(-15px); }
+        .petal:nth-child(3) { transform: translate(-50%, -50%) rotate(144deg) translateY(-15px); }
+        .petal:nth-child(4) { transform: translate(-50%, -50%) rotate(216deg) translateY(-15px); }
+        .petal:nth-child(5) { transform: translate(-50%, -50%) rotate(288deg) translateY(-15px); }
+
+        .flower-center {
+            position: absolute;
+            bottom: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 能量光晕 */
+        .plant-glow {
+            position: absolute;
+            width: 120%;
+            height: 120%;
+            top: -10%;
+            left: -10%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,215,0,0.4) 0%, transparent 70%);
+            animation: pulse 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.15); }
+        }
+
+        /* 播种次数标签 */
+        .plant-count {
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 3px 8px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #2C1810;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            white-space: nowrap;
+            z-index: 20;
+        }
+
+        .plant-count::before {
+            content: '🌱';
+            font-size: 10px;
+            margin-right: 2px;
+        }
+
+        /* 播种动画 */
+        .sow-animation {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            color: #32CD32;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            pointer-events: none;
+            animation: floatUp 1.5s ease-out forwards;
+            z-index: 100;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-80px) scale(1.5);
+            }
+        }
+
+        /* 杂草 */
+        .weed {
+            position: absolute;
+            bottom: 22%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            animation: wiggle 0.6s ease-in-out infinite;
+            z-index: 5;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-8deg); }
+            50% { transform: rotate(8deg); }
+        }
+
+        .weed svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.4));
+        }
+
+        /* 底部按钮区域 */
+        .bottom-actions {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 16px 12px;
+            border: none;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #2C1810;
+            box-shadow: 0 4px 12px rgba(255,165,0,0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #9370DB, #8A2BE2);
+            color: white;
+            box-shadow: 0 4px 12px rgba(147,112,219,0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #FF6B6B, #DC143C);
+            color: white;
+            box-shadow: 0 4px 12px rgba(220,20,60,0.3);
+        }
+
+        .btn-neutral {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: white;
+            box-shadow: 0 4px 12px rgba(107,114,128,0.3);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        }
+
+        .btn-small {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 28px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-content.large {
+            max-width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2C1810;
+        }
+
+        .modal-close {
+            background: #F5F5F5;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #E5E5E5;
+        }
+
+        /* 帮助按钮 */
+        .help-button {
+            padding: 6px 14px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #9370DB, #8A2BE2);
+            color: white;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(147, 112, 219, 0.3);
+            transition: all 0.2s;
+        }
+
+        .help-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(147, 112, 219, 0.4);
+        }
+
+        /* QA 说明书样式 */
+        .qa-content {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .qa-item {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .qa-item:last-child {
+            border-bottom: none;
+        }
+
+        .qa-question {
+            color: #0D9488;
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .qa-answer {
+            color: #6B7280;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* 转场动画屏幕 */
+        .transition-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 3000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .transition-screen.active {
+            display: flex;
+        }
+
+        .transition-screen.cold {
+            background: linear-gradient(180deg, #1e3a5f 0%, #0f172a 50%, #1a1a2e 100%);
+        }
+
+        .transition-screen.warm {
+            background: linear-gradient(180deg, #B8860B 0%, #DAA520 30%, #CD853F 100%);
+        }
+
+        .transition-text {
+            font-size: 32px;
+            font-weight: 200;
+            text-align: center;
+            letter-spacing: 4px;
+            animation: transition-fade-in 0.8s ease-out forwards;
+        }
+
+        .transition-subtitle {
+            font-size: 18px;
+            margin-top: 16px;
+            opacity: 0.8;
+            font-weight: 300;
+            animation: transition-fade-in 0.8s ease-out 0.3s forwards;
+            opacity: 0;
+        }
+
+        @keyframes transition-fade-in {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 表单 */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #4B5563;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s;
+            background: #F9FAFB;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #9370DB;
+            background: white;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        /* 目标列表 */
+        .goal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .goal-item {
+            background: linear-gradient(135deg, #F9FAFB, #F3F4F6);
+            padding: 16px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .goal-item:hover {
+            background: linear-gradient(135deg, #F3F4F6, #E5E7EB);
+            border-color: #E5E7EB;
+        }
+
+        .goal-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .goal-category-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .goal-title {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1F2937;
+            line-height: 1.4;
+        }
+
+        .goal-stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .goal-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .goal-stat.growth {
+            color: #059669;
+        }
+
+        .goal-stat.vitality {
+            color: #D97706;
+        }
+
+        .goal-stat.seeds {
+            color: #7C3AED;
+        }
+
+        .goal-delete {
+            background: #FEF2F2;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            color: #DC2626;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .goal-delete:hover {
+            background: #FEE2E2;
+        }
+
+        /* 冥想室 */
+        .meditation-room {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0F0F23 0%, #1a1a2e 50%, #16213e 100%);
+            z-index: 2000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .meditation-room.active {
+            display: flex;
+        }
+
+        .meditation-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(147,112,219,0.4) 0%, transparent 70%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: breathe-circle 4s ease-in-out infinite;
+            border: 2px solid rgba(147,112,219,0.3);
+        }
+
+        @keyframes breathe-circle {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+
+        .meditation-timer {
+            font-size: 52px;
+            font-weight: 200;
+            letter-spacing: 2px;
+        }
+
+        .meditation-text {
+            margin-top: 32px;
+            font-size: 18px;
+            text-align: center;
+            max-width: 320px;
+            line-height: 1.7;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .meditation-actions {
+            position: absolute;
+            bottom: 50px;
+            display: flex;
+            gap: 16px;
+        }
+
+        .meditation-btn {
+            padding: 14px 24px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .meditation-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .meditation-btn.finish {
+            background: linear-gradient(135deg, #10B981, #059669);
+            border-color: transparent;
+        }
+
+        /* 除草模态框 */
+        .weed-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .weed-step {
+            background: #FEF2F2;
+            padding: 16px;
+            border-radius: 14px;
+            border-left: 4px solid #DC2626;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .weed-step:hover {
+            background: #FEE2E2;
+        }
+
+        .weed-step-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #B91C1C;
+            font-size: 15px;
+        }
+
+        .weed-step-desc {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .weed-step.completed {
+            background: #ECFDF5;
+            border-left-color: #059669;
+        }
+
+        .weed-step.completed .weed-step-title {
+            color: #047857;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9CA3AF;
+        }
+
+        .empty-state-icon {
+            font-size: 56px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .empty-state small {
+            font-size: 13px;
+            color: #9CA3AF;
+            margin-top: 8px;
+            display: block;
+        }
+
+        /* 记录列表 */
+        .record-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .record-item {
+            background: linear-gradient(135deg, #F9FAFB, #F3F4F6);
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            border-left: 3px solid #9370DB;
+            position: relative;
+        }
+
+        .record-date {
+            font-size: 11px;
+            color: #9CA3AF;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .record-partner {
+            color: #7C3AED;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .record-action {
+            color: #4B5563;
+            line-height: 1.5;
+            padding-right: 40px;
+        }
+
+        .record-goal {
+            font-size: 11px;
+            color: #9CA3AF;
+            margin-top: 6px;
+        }
+
+        .record-delete {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #FEF2F2;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            color: #DC2626;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .record-delete:hover {
+            background: #FEE2E2;
+        }
+
+        .record-edit {
+            position: absolute;
+            top: 10px;
+            right: 44px;
+            background: #EFF6FF;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            color: #3B82F6;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .record-edit:hover {
+            background: #DBEAFE;
+        }
+
+        /* 冥想记录样式 */
+        .meditation-record-item {
+            background: linear-gradient(135deg, #F0F9FF, #E0F2FE);
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            border-left: 3px solid #3B82F6;
+            position: relative;
+        }
+
+        .meditation-record-date {
+            font-size: 11px;
+            color: #9CA3AF;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .meditation-record-duration {
+            color: #3B82F6;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .meditation-record-streak {
+            font-size: 12px;
+            color: #059669;
+            margin-top: 6px;
+        }
+
+        /* 翻页控制 */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        .pagination-btn {
+            background: #F3F4F6;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #4B5563;
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #E5E7EB;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: #6B7280;
+            font-weight: 500;
+        }
+
+        /* 成功提示 */
+        .success-toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.98);
+            backdrop-filter: blur(10px);
+            padding: 30px 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 3000;
+            animation: toastIn 0.3s ease-out;
+        }
+
+        .success-toast .emoji {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .success-toast .title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #059669;
+            margin-bottom: 8px;
+        }
+
+        .success-toast .message {
+            font-size: 16px;
+            color: #6B7280;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+        }
+
+        /* 导出区域 */
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        /* 响应式 */
+        @media (max-width: 380px) {
+            .actions-grid {
+                gap: 8px;
+            }
+
+            .btn {
+                padding: 14px 10px;
+                font-size: 13px;
+            }
+
+            .plant-count {
+                font-size: 9px;
+                padding: 2px 6px;
+                top: -20px;
+            }
+        }
+
+        /* 格西语录展示框 */
+        .wisdom-quote-box {
+            background: linear-gradient(135deg, #9370DB 0%, #8A2BE2 100%);
+            border-radius: 18px;
+            padding: 16px 18px 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 15px rgba(147, 112, 219, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wisdom-quote-box::before {
+            content: '✦';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-size: 60px;
+            color: rgba(255, 255, 255, 0.08);
+        }
+
+        .wisdom-quote-box::after {
+            content: '✦';
+            position: absolute;
+            bottom: -12px;
+            left: -8px;
+            font-size: 45px;
+            color: rgba(255, 255, 255, 0.08);
+        }
+
+        .wisdom-quote-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            line-height: 1.5;
+            text-align: center;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 翻土空间 - 呼吸观察室 */
+        .breathing-room {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            z-index: 2500;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .breathing-room.active {
+            display: flex;
+        }
+
+        .breathing-halo {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(147, 112, 219, 0.6) 0%, rgba(138, 43, 226, 0.2) 50%, transparent 70%);
+            animation: breathe-halo 4s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes breathe-halo {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 1; }
+        }
+
+        .breathing-timer {
+            position: absolute;
+            bottom: -50px;
+            font-size: 48px;
+            font-weight: 200;
+            letter-spacing: 2px;
+        }
+
+        .breathing-instruction {
+            margin-top: 80px;
+            font-size: 18px;
+            opacity: 0.8;
+            font-weight: 300;
+        }
+
+        .breathing-actions {
+            position: absolute;
+            bottom: 60px;
+            display: flex;
+            gap: 16px;
+        }
+
+        /* 翻土空间 - 自由书写区 */
+        .free-writing-room {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, #2C1810 0%, #1a1a2e 100%);
+            z-index: 2600;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .free-writing-room.active {
+            display: flex;
+        }
+
+        .free-writing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .free-writing-timer {
+            font-size: 32px;
+            font-weight: 200;
+        }
+
+        .free-writing-area {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 18px;
+            line-height: 1.8;
+            resize: none;
+            outline: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .free-writing-area::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .free-writing-area.faded {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .free-writing-actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        /* 文字消散动画 */
+        .text-dissolve {
+            animation: dissolve 0.8s ease-out forwards;
+        }
+
+        @keyframes dissolve {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30px);
+                filter: blur(10px);
+            }
+        }
+
+        /* 颂钵震动效果 */
+        .bowl-vibrate {
+            animation: vibrate 0.5s ease-out;
+        }
+
+        @keyframes vibrate {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        /* 化作春泥 - 粒子消散效果 */
+        .free-writing-area.dissolving {
+            pointer-events: none;
+            position: relative;
+        }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+            animation: particle-fly 1.5s ease-out forwards;
+        }
+
+        @keyframes particle-fly {
+            0% {
+                opacity: 0.8;
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(0);
+            }
+        }
+
+        /* 文字沉降到土壤的动画 */
+        .char-dissolve {
+            display: inline-block;
+            position: relative;
+        }
+
+        /* 沉降动画关键帧 */
+        @keyframes sinking-soil {
+            0% {
+                opacity: 1;
+                transform: translateY(0) rotate(0deg);
+                color: rgba(255, 255, 255, 0.9);
+            }
+            30% {
+                opacity: 0.9;
+                transform: translateY(calc(var(--sink-y) * 0.3)) rotate(5deg);
+                color: #98D8AA;
+            }
+            60% {
+                opacity: 0.6;
+                transform: translateY(calc(var(--sink-y) * 0.6)) rotate(-3deg);
+                color: #8B7355;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(var(--sink-y)) rotate(0deg);
+                color: #6B3E0A;
+            }
+        }
+
+        /* 释放成功提示 */
+        .release-success {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 2700;
+            opacity: 0;
+            animation: fadeInOut 3s ease-out forwards;
+        }
+
+        .release-success .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .release-success .text {
+            font-size: 24px;
+            color: white;
+            font-weight: 300;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部帮助按钮 -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+            <button class="help-button" onclick="app.openHelpModal()">📖 使用说明</button>
+        </div>
+
+        <!-- 天气状态 -->
+        <div class="weather-status">
+            <span class="weather-icon">☀️</span>
+            <span class="weather-text" id="weatherText">暖阳 · 连续冥想 0 天</span>
+        </div>
+
+        <!-- 格西语录框 -->
+        <div class="wisdom-quote-box">
+            <div class="wisdom-quote-text" id="dailyWisdomQuote">种瓜得瓜，种豆得豆</div>
+        </div>
+
+        <!-- 虚拟花园 -->
+        <div class="garden" id="garden">
+            <div class="garden-sky"></div>
+            <div class="garden-soil">
+                <div class="soil-grass"></div>
+                <div class="soil-dirt"></div>
+                <div class="soil-particles"></div>
+                <!-- 土壤记忆层 -->
+                <div class="soil-memory-layer" id="soilMemoryLayer"></div>
+                <!-- 肥力计数器 -->
+                <div class="fertility-counter" id="fertilityCounter">
+                    <span class="fertility-icon">🌱</span>
+                    <span>化作春泥 <span class="fertility-count" id="compostCount">0</span> 次</span>
+                </div>
+            </div>
+            <div id="plantsContainer"></div>
+            <div id="weedsContainer"></div>
+        </div>
+
+        <!-- 空状态提示 -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-state-icon">🌱</div>
+            <p>还没有种子<br>点击"播种"开始你的智慧之旅</p>
+        </div>
+    </div>
+
+    <!-- 底部按钮 -->
+    <div class="bottom-actions">
+        <div class="actions-grid">
+            <button class="btn btn-secondary" onclick="app.openTillingSpaceModal()">
+                <span>🪣</span><span>翻土</span>
+            </button>
+            <button class="btn btn-primary" onclick="app.openSowModal()">
+                <span>🌱</span><span>播种</span>
+            </button>
+            <button class="btn btn-info" onclick="app.openWateringModal()">
+                <span>☕</span><span>咖啡冥想</span>
+            </button>
+        </div>
+        <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+            <button class="btn btn-neutral btn-small" onclick="app.openGoalsModal()">
+                <span>🎯</span><span>目标</span>
+            </button>
+            <button class="btn btn-neutral btn-small" onclick="app.openRecordsModal()">
+                <span>📖</span><span>记录</span>
+            </button>
+            <button class="btn btn-neutral btn-small" onclick="app.openDataModal()">
+                <span>💾</span><span>数据</span>
+            </button>
+        </div>
+        <div style="margin-top: 8px;">
+            <button class="btn btn-danger" style="width: 100%;" onclick="app.openWeedModal()">
+                <span>🌿</span><span>除草 - 四力法</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- QA 说明书模态框 -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 class="modal-title">📖 使用指南</h2>
+                <button class="modal-close" onclick="app.closeModal('helpModal')">&times;</button>
+            </div>
+            <div class="qa-content">
+                <div class="qa-item">
+                    <div class="qa-question">Q: 什么是"翻土"？</div>
+                    <div class="qa-answer">A: 翻土是自我接纳与清理的过程。通过呼吸观察室静心，或在自由书写区无评判地记录念头，让情绪转化为滋养种子的养分。</div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question">Q: 什么是"播种"？</div>
+                    <div class="qa-answer">A: 播种是为他人创造善行。选择一个目标，记录你帮助了谁、做了什么。每一次善行都会为你的种子注入能量。</div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question">Q: 什么是"咖啡冥想"？</div>
+                    <div class="qa-answer">A: 咖啡冥想是回想今日善行，带着喜悦感回顾，能让种子成倍增长（至少四倍）。</div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question">Q: 植物阶段代表什么？</div>
+                    <div class="qa-answer">A: 种子→破土→抽叶→开花，代表目标在善行浇灌下的成长过程。播种次数越多，植物生长越快。</div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question">Q: 什么是"除草"？</div>
+                    <div class="qa-answer">A: 除草是用四力法清理负面种子。回顾动机→诚恳忏悔→承诺不再犯→补偿行动，净化意识花园。</div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question">Q: 自由书写的文字会保存吗？</div>
+                    <div class="qa-answer">A: 绝不会。自由书写是"阅后即焚"的安全空间。点击"化作春泥"后，文字会消散转化为养分，只保留记忆痕迹。</div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question">Q: 化作春泥次数有什么作用？</div>
+                    <div class="qa-answer">A: 它是你内在清理频率的勋章。每次化作春泥都会增加植物活力，次数越多，额外加成越高。</div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question">Q: 数据会丢失吗？</div>
+                    <div class="qa-answer">A: 数据保存在本地浏览器。换手机前请使用"数据管理"导出备份，导入即可恢复。</div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question">Q: 想提供修改建议，联系谁？</div>
+                    <div class="qa-answer">A: 联系 Dubin_5749，备注：种子智慧</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 浇水选择模态框 -->
+    <div class="modal" id="wateringModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">💧 浇水 - 咖啡冥想</h2>
+                <button class="modal-close" onclick="app.closeModal('wateringModal')">&times;</button>
+            </div>
+            <p style="text-align: center; color: #6B7280; font-size: 14px; margin-bottom: 20px;">
+                回想今日善行，带着喜悦感回顾<br>
+                让种子成倍增长
+            </p>
+            <div style="display: grid; gap: 12px;">
+                <button class="btn btn-primary" onclick="app.startMeditationWithTransition(300)">
+                    <span>☕</span><span>5 分钟</span>
+                </button>
+                <button class="btn btn-primary" onclick="app.startMeditationWithTransition(600)">
+                    <span>☕</span><span>10 分钟</span>
+                </button>
+                <button class="btn btn-primary" onclick="app.startMeditationWithTransition(900)">
+                    <span>☕</span><span>15 分钟</span>
+                </button>
+                <button class="btn btn-secondary" onclick="app.openCustomTimeFromWatering()">
+                    <span>🎲</span><span>自定义时间</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定义时间模态框 -->
+    <div class="modal" id="customTimeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🎲 自定义冥想时间</h2>
+                <button class="modal-close" onclick="app.closeModal('customTimeModal')">&times;</button>
+            </div>
+            <form onsubmit="app.startMeditationWithCustomTime(event)">
+                <div class="form-group">
+                    <label class="form-label">冥想时间（分钟）</label>
+                    <input type="number" class="form-input" id="customMinutes" min="1" max="120" placeholder="输入分钟数" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <span>☕</span><span>开始冥想</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 记录选择模态框 -->
+    <div class="modal" id="recordsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📖 记录查看</h2>
+                <button class="modal-close" onclick="app.closeModal('recordsModal')">&times;</button>
+            </div>
+            <p style="text-align: center; color: #6B7280; font-size: 14px; margin-bottom: 20px;">
+                选择要查看的记录类型
+            </p>
+            <div style="display: grid; gap: 12px;">
+                <button class="btn btn-primary" onclick="app.openHistoryModal()">
+                    <span>🌱</span><span>过往善行</span>
+                </button>
+                <button class="btn btn-secondary" onclick="app.openMeditationHistoryModal()">
+                    <span>☕</span><span>冥想记录</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据管理模态框 -->
+    <div class="modal" id="dataModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">💾 数据管理</h2>
+                <button class="modal-close" onclick="app.closeModal('dataModal')">&times;</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p style="color: #6B7280; font-size: 14px; line-height: 1.6;">
+                    换手机、清除浏览器数据前，请先导出数据备份<br>
+                    导入将覆盖当前所有数据
+                </p>
+            </div>
+            <div style="display: grid; gap: 12px;">
+                <button class="btn btn-primary" onclick="app.exportData()" style="width: 100%;">
+                    <span>📤</span><span>导出全部数据</span>
+                </button>
+                <button class="btn btn-info" onclick="document.getElementById('importFileInput').click()" style="width: 100%;">
+                    <span>📥</span><span>导入全部数据</span>
+                </button>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="app.importData(event)">
+            </div>
+        </div>
+    </div>
+
+    <!-- 目标管理模态框 -->
+    <div class="modal" id="goalsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🎯 愿望池</h2>
+                <button class="modal-close" onclick="app.closeModal('goalsModal')">&times;</button>
+            </div>
+            <div id="goalsList" class="goal-list"></div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="app.openCreateGoalModal()">+ 新建目标</button>
+        </div>
+    </div>
+
+    <!-- 创建目标模态框 -->
+    <div class="modal" id="createGoalModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">✨ 新建目标</h2>
+                <button class="modal-close" onclick="app.closeModal('createGoalModal')">&times;</button>
+            </div>
+            <form id="createGoalForm" onsubmit="app.createGoal(event)">
+                <div class="form-group">
+                    <label class="form-label">目标描述</label>
+                    <textarea class="form-textarea" id="goalTitle" placeholder="清晰、具体、可衡量的目标..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">所属分类</label>
+                    <select class="form-select" id="goalCategory" required>
+                        <option value="wealth">💰 财富</option>
+                        <option value="relation">💕 关系</option>
+                        <option value="health">💪 健康</option>
+                        <option value="wisdom">🧠 智慧</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">播种</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 播种模态框 -->
+    <div class="modal" id="sowModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🌱 播种记录</h2>
+                <button class="modal-close" onclick="app.closeModal('sowModal')">&times;</button>
+            </div>
+            <form id="sowForm" onsubmit="app.recordSowing(event)">
+                <div class="form-group">
+                    <label class="form-label">选择目标</label>
+                    <select class="form-select" id="sowGoal" required></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">业力伙伴</label>
+                    <input type="text" class="form-input" id="sowPartner" placeholder="帮助谁？" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">善行描述</label>
+                    <textarea class="form-textarea" id="sowAction" placeholder="为TA做了什么..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">🌱 记录善行</button>
+            </form>
+            <div id="recentRecords" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- 过往善行查看模态框 -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 class="modal-title">📖 过往善行查看</h2>
+                <button class="modal-close" onclick="app.closeModal('historyModal')">&times;</button>
+            </div>
+            <div id="historyContent">
+                <div class="record-list" id="historyRecordList"></div>
+                <div class="pagination" id="historyPagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 冥想记录模态框 -->
+    <div class="modal" id="meditationHistoryModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 class="modal-title">📖 冥想记录</h2>
+                <button class="modal-close" onclick="app.closeModal('meditationHistoryModal')">&times;</button>
+            </div>
+            <div id="meditationHistoryContent">
+                <div class="record-list" id="meditationHistoryList"></div>
+                <div class="pagination" id="meditationHistoryPagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑善行记录模态框 -->
+    <div class="modal" id="editRecordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">✏️ 编辑善行记录</h2>
+                <button class="modal-close" onclick="app.closeModal('editRecordModal')">&times;</button>
+            </div>
+            <form id="editRecordForm" onsubmit="app.saveRecordEdit(event)">
+                <input type="hidden" id="editRecordId">
+                <div class="form-group">
+                    <label class="form-label">选择目标</label>
+                    <select class="form-select" id="editRecordGoal" required></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">业力伙伴</label>
+                    <input type="text" class="form-input" id="editRecordPartner" placeholder="帮助谁？" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">善行描述</label>
+                    <textarea class="form-textarea" id="editRecordAction" placeholder="为TA做了什么..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">💾 保存修改</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑冥想记录模态框 -->
+    <div class="modal" id="editMeditationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">✏️ 编辑冥想记录</h2>
+                <button class="modal-close" onclick="app.closeModal('editMeditationModal')">&times;</button>
+            </div>
+            <form id="editMeditationForm" onsubmit="app.saveMeditationEdit(event)">
+                <input type="hidden" id="editMeditationId">
+                <div class="form-group">
+                    <label class="form-label">冥想时长（秒）</label>
+                    <input type="number" class="form-input" id="editMeditationDuration" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">记录时间</label>
+                    <input type="datetime-local" class="form-input" id="editMeditationTime" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">💾 保存修改</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 除草模态框 -->
+    <div class="modal" id="weedModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🌿 除草 - 四力法</h2>
+                <button class="modal-close" onclick="app.closeModal('weedModal')">&times;</button>
+            </div>
+            <div id="weedContent"></div>
+        </div>
+    </div>
+
+    <!-- 冥想室 -->
+    <div class="meditation-room" id="meditationRoom">
+        <div class="meditation-circle">
+            <span class="meditation-timer" id="meditationTimer">5:00</span>
+        </div>
+        <p class="meditation-text" id="meditationText">深呼吸... 感受当下的平静</p>
+        <div class="meditation-actions">
+            <button class="meditation-btn" onclick="app.skipMeditationText()">🔄 换一句</button>
+            <button class="meditation-btn finish" onclick="app.finishMeditation()">✓ 完成冥想</button>
+        </div>
+    </div>
+
+    <!-- 翻土空间选择模态框 -->
+    <div class="modal" id="tillingSpaceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🪣 翻土空间</h2>
+                <button class="modal-close" onclick="app.closeModal('tillingSpaceModal')">&times;</button>
+            </div>
+            <p style="text-align: center; color: #6B7280; font-size: 14px; margin-bottom: 20px; line-height: 1.6;">
+                先接纳自我，清理内心土壤，再向外播种
+            </p>
+            <div style="display: grid; gap: 12px;">
+                <button class="btn btn-primary" onclick="app.openBreathingRoomModal()">
+                    <span>🌬️</span><span>呼吸观察室</span>
+                </button>
+                <button class="btn btn-secondary" onclick="app.openFreeWritingModal()">
+                    <span>✍️</span><span>自由书写区</span>
+                </button>
+            </div>
+            <p style="text-align: center; color: #9CA3AF; font-size: 12px; margin-top: 16px;">
+                此处内容不会被保存，尽情释放吧
+            </p>
+        </div>
+    </div>
+
+    <!-- 呼吸观察室时间选择模态框 -->
+    <div class="modal" id="breathingRoomModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🌬️ 呼吸观察室</h2>
+                <button class="modal-close" onclick="app.closeModal('breathingRoomModal')">&times;</button>
+            </div>
+            <p style="text-align: center; color: #6B7280; font-size: 14px; margin-bottom: 20px;">
+                跟随光晕的律动，专注于呼吸
+            </p>
+            <div style="display: grid; gap: 12px;">
+                <button class="btn btn-primary" onclick="app.startBreathing(180)">
+                    <span>🌬️</span><span>3 分钟</span>
+                </button>
+                <button class="btn btn-primary" onclick="app.startBreathing(300)">
+                    <span>🌬️</span><span>5 分钟</span>
+                </button>
+                <button class="btn btn-primary" onclick="app.startBreathing(600)">
+                    <span>🌬️</span><span>10 分钟</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自由书写时间选择模态框 -->
+    <div class="modal" id="freeWritingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">✍️ 自由书写区</h2>
+                <button class="modal-close" onclick="app.closeModal('freeWritingModal')">&times;</button>
+            </div>
+            <p style="text-align: center; color: #6B7280; font-size: 14px; margin-bottom: 20px;">
+                无评判地书写，让念头自然流淌<br>
+                时间到后可【化作春泥】，文字将消失，不会被保存
+            </p>
+            <div class="form-group">
+                <label class="form-label">书写时长（分钟）</label>
+                <input type="number" class="form-input" id="freeWritingMinutes" min="1" max="60" value="10" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" id="disableBackspace" style="margin-right: 8px;">
+                    禁用回删键（强制向前，不回头）
+                </label>
+            </div>
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" id="autoFadeText" style="margin-right: 8px;">
+                    文字自动淡化（3秒后变灰）
+                </label>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="app.startFreeWriting()">
+                <span>✍️</span><span>开始书写</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 呼吸观察室 -->
+    <div class="breathing-room" id="breathingRoom">
+        <div class="breathing-halo">
+            <span class="breathing-timer" id="breathingTimer">3:00</span>
+        </div>
+        <p class="breathing-instruction" id="breathingInstruction">吸气...</p>
+        <div class="breathing-actions">
+            <button class="meditation-btn" onclick="app.finishBreathing()">✓ 完成</button>
+        </div>
+    </div>
+
+    <!-- 自由书写区 -->
+    <div class="free-writing-room" id="freeWritingRoom">
+        <div class="free-writing-header">
+            <span class="free-writing-timer" id="freeWritingTimer">10:00</span>
+            <small id="freeWritingStatus">书写中...</small>
+        </div>
+        <textarea class="free-writing-area" id="freeWritingArea" placeholder="在这里写下你的一切想法... 不用担心格式，不用评判好坏，让文字自然流淌..."></textarea>
+        <div class="free-writing-actions" id="freeWritingActions">
+            <button class="meditation-btn" onclick="app.finishFreeWritingEarly()">✓ 提前完成</button>
+        </div>
+        <div class="free-writing-actions" id="burnActions" style="display: none;">
+            <button class="meditation-btn finish" onclick="app.burnToSoil()">🌱 化作春泥</button>
+        </div>
+    </div>
+
+    <!-- 转场屏幕 - 呼吸观察 -->
+    <div class="transition-screen cold" id="tillingTransition">
+        <div class="transition-text">翻土：接纳真实</div>
+        <div class="transition-subtitle">Tilling: Embrace Your Truth</div>
+    </div>
+
+    <!-- 转场屏幕 - 咖啡冥想 -->
+    <div class="transition-screen warm" id="wateringTransition">
+        <div class="transition-text">浇灌：回想喜悦</div>
+        <div class="transition-subtitle">Watering: Recall Joy</div>
+    </div>
+
+    <!-- 成功提示容器 -->
+    <div id="toastContainer"></div>
+
+    <script>
+        // 应用数据结构
+        const DEFAULT_DATA = {
+            goals: [],
+            records: [],
+            weeds: [],
+            meditations: [],
+            lastOpenTime: Date.now(),
+            lastMeditationTime: null,
+            consecutiveMeditationDays: 0,
+            lastBreathingTime: null,
+            lastFreeWritingTime: null,
+            soilCompostCount: 0,
+            soilMemory: [] // 存储每次化作春泥的记忆痕迹
+        };
+
+        // 格西老师智慧金句
+        const WISDOM_QUOTES = [
+            "种瓜得瓜，种豆得豆",
+            "你想得到什么，就先帮助别人得到什么",
+            "咖啡冥想让种子成倍增长，至少四倍！",
+            "给出去的，终将回来",
+            "你的世界，是你意识的投射",
+            "利他就是最高形式的利己",
+            "当下的每一刻都在种下新的种子",
+            "每一次善意，都是一颗珍贵的种子",
+            "成功不是因为运气，而是因为你种下了正确的种子",
+            "想要财富，就先带着觉知给出去",
+            "想要好的关系，就先帮助他人获得好的关系",
+            "想要健康，就先关心他人的健康",
+            "种子很小，果实很大",
+            "每天的咖啡冥想是种子生长的关键",
+            "带着欢喜心回顾善行，种子会快速增长",
+            "不要期待立即回报，种子需要时间成熟",
+            "你所做的一切都会回到你身上",
+            "服务他人是通往成功最快的道路",
+            "空性与种子是智慧的核心",
+            "问题本身就是一颗种子",
+            "停止负面念头，拔除坏种子",
+            "感恩是加速种子成熟的肥料"
+        ];
+
+        class SeedLab {
+            constructor() {
+                this.data = this.loadData();
+                this.meditationTimer = null;
+                this.meditationTimeLeft = 300;
+                this.currentTextIndex = 0;
+                this.meditationRecords = [];
+                this.historyPage = 0;
+                this.meditationHistoryPage = 0;
+                this.recordsPerPage = 7;
+                this.meditationStartTime = null;
+                this.init();
+            }
+
+            init() {
+                this.processOfflineTime();
+                this.render();
+                this.updateWeather();
+                this.showDailyWisdomQuote();
+            }
+
+            // 显示每日格西语录
+            showDailyWisdomQuote() {
+                const quoteElement = document.getElementById('dailyWisdomQuote');
+                if (quoteElement) {
+                    const randomIndex = Math.floor(Math.random() * WISDOM_QUOTES.length);
+                    quoteElement.textContent = WISDOM_QUOTES[randomIndex];
+                }
+            }
+
+            // 打开数据管理模态框
+            openDataModal() {
+                this.openModal('dataModal');
+            }
+
+            // 打开记录选择模态框
+            openRecordsModal() {
+                this.openModal('recordsModal');
+            }
+
+            loadData() {
+                const saved = localStorage.getItem('seedlab_data');
+                const data = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_DATA));
+                // 兼容旧数据，添加 meditations 数组
+                if (!data.meditations) {
+                    data.meditations = [];
+                }
+                // 兼容旧数据，添加翻土空间时间字段
+                if (!data.lastBreathingTime) {
+                    data.lastBreathingTime = null;
+                }
+                if (!data.lastFreeWritingTime) {
+                    data.lastFreeWritingTime = null;
+                }
+                // 兼容旧数据，添加土壤记忆字段
+                if (!data.soilCompostCount) {
+                    data.soilCompostCount = 0;
+                }
+                if (!data.soilMemory) {
+                    data.soilMemory = [];
+                }
+                return data;
+            }
+
+            saveData() {
+                localStorage.setItem('seedlab_data', JSON.stringify(this.data));
+            }
+
+            processOfflineTime() {
+                const now = Date.now();
+                const lastOpen = this.data.lastOpenTime;
+                const hoursDiff = (now - lastOpen) / (1000 * 60 * 60);
+
+                if (hoursDiff >= 24) {
+                    const daysPassed = Math.floor(hoursDiff / 24);
+                    this.data.goals.forEach(goal => {
+                        goal.vitality = Math.max(0, goal.vitality - (daysPassed * 10));
+                    });
+                }
+
+                if (hoursDiff >= 24 && !this.data.lastMeditationTime) {
+                    this.addWeed('疏于咖啡冥想', '意识花园需要定期浇灌');
+                }
+
+                this.data.lastOpenTime = now;
+                this.saveData();
+            }
+
+            updateWeather() {
+                const weatherText = document.getElementById('weatherText');
+                const body = document.body;
+
+                if (!this.data.lastMeditationTime) {
+                    body.classList.add('cold-weather');
+                    weatherText.textContent = '阴天 · 开始咖啡冥想迎来阳光';
+                    return;
+                }
+
+                const hoursSinceMeditation = (Date.now() - this.data.lastMeditationTime) / (1000 * 60 * 60);
+
+                if (hoursSinceMeditation > 24) {
+                    body.classList.add('cold-weather');
+                    weatherText.textContent = `阴天 · 距上次冥想 ${Math.floor(hoursSinceMeditation)} 小时`;
+                } else {
+                    body.classList.remove('cold-weather');
+                    weatherText.textContent = `暖阳 · 连续冥想 ${this.data.consecutiveMeditationDays} 天`;
+                }
+            }
+
+            getCategoryColor(category) {
+                const colors = {
+                    wealth: '#FFD700',
+                    relation: '#FF69B4',
+                    health: '#32CD32',
+                    wisdom: '#9370DB'
+                };
+                return colors[category] || '#FFD700';
+            }
+
+            getPlantStage(growth) {
+                if (growth < 3) return 'seed';
+                if (growth < 8) return 'sprout';
+                if (growth < 15) return 'leaf';
+                return 'flower';
+            }
+
+            getGoalSowCount(goalId) {
+                return this.data.records.filter(r => r.goalId === goalId).length;
+            }
+
+            renderGarden() {
+                const container = document.getElementById('plantsContainer');
+                const emptyState = document.getElementById('emptyState');
+
+                if (this.data.goals.length === 0) {
+                    container.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                container.innerHTML = '';
+
+                const totalPlants = this.data.goals.length;
+                const availableWidth = 80; // 使用80%的宽度，留边距
+                const spacing = totalPlants > 1 ? availableWidth / (totalPlants - 1) : 50;
+
+                this.data.goals.forEach((goal, index) => {
+                    const stage = this.getPlantStage(goal.growth);
+                    const isWithered = goal.vitality <= 0;
+                    // 根据植物数量动态计算位置
+                    let left;
+                    if (totalPlants === 1) {
+                        left = 50;
+                    } else {
+                        left = 10 + (index * spacing);
+                    }
+                    // 添加少量随机偏移
+                    left += (Math.random() * 4) - 2;
+                    const sowCount = this.getGoalSowCount(goal.id);
+
+                    const plant = document.createElement('div');
+                    plant.className = `plant plant-${stage}-wrapper${isWithered ? ' withered' : ''}`;
+                    plant.style.left = `${left}%`;
+                    plant.id = `plant-${goal.id}`;
+
+                    const countLabel = document.createElement('div');
+                    countLabel.className = 'plant-count';
+                    countLabel.textContent = sowCount;
+                    plant.appendChild(countLabel);
+
+                    if (stage === 'seed') {
+                        plant.innerHTML += `<div class="plant-seed" style="background: radial-gradient(ellipse at 30% 30%, ${this.getCategoryColor(goal.category)}, #8B4513, #5D3A0A);"></div>`;
+                    } else if (stage === 'sprout') {
+                        const leafColor = this.getCategoryColor(goal.category);
+                        plant.innerHTML += `
+                            <div class="plant-sprout">
+                                <div class="sprout-stem"></div>
+                                <div class="sprout-leaf" style="background: linear-gradient(135deg, ${leafColor}, ${leafColor}88);"></div>
+                            </div>
+                        `;
+                    } else if (stage === 'leaf') {
+                        const leafColor = this.getCategoryColor(goal.category);
+                        plant.innerHTML += `
+                            <div class="plant-leaf" style="--leaf-color: linear-gradient(135deg, ${leafColor}, ${leafColor}88);">
+                                <div class="leaf-stem"></div>
+                                <div class="leaf-main"></div>
+                                <div class="leaf-left"></div>
+                                <div class="leaf-right"></div>
+                            </div>
+                        `;
+                    } else if (stage === 'flower') {
+                        const petalColor = this.getCategoryColor(goal.category);
+                        plant.innerHTML += `
+                            <div class="plant-flower">
+                                <div class="flower-stem"></div>
+                                <div class="flower-petals">
+                                    <div class="petal" style="background: ${petalColor};"></div>
+                                    <div class="petal" style="background: ${petalColor};"></div>
+                                    <div class="petal" style="background: ${petalColor};"></div>
+                                    <div class="petal" style="background: ${petalColor};"></div>
+                                    <div class="petal" style="background: ${petalColor};"></div>
+                                </div>
+                                <div class="flower-center"></div>
+                            </div>
+                        `;
+                    }
+
+                    if (goal.vitality > 50 && !isWithered) {
+                        const glow = document.createElement('div');
+                        glow.className = 'plant-glow';
+                        plant.appendChild(glow);
+                    }
+
+                    container.appendChild(plant);
+                });
+
+                this.renderWeeds();
+                this.renderSoilMemory();
+                this.updateFertilityCounter();
+            }
+
+            renderSoilMemory() {
+                const container = document.getElementById('soilMemoryLayer');
+                container.innerHTML = '';
+
+                // 最多显示10个记忆痕迹
+                const memoriesToShow = this.data.soilMemory.slice(-10);
+
+                memoriesToShow.forEach((memory, index) => {
+                    const stone = document.createElement('div');
+                    stone.className = 'memory-stone';
+                    // 随机大小和位置
+                    const size = 8 + Math.random() * 12;
+                    const left = 5 + (Math.random() * 85);
+                    const bottom = 5 + (Math.random() * 60);
+
+                    stone.style.cssText = `
+                        width: ${size}px;
+                        height: ${size * 0.8}px;
+                        left: ${left}%;
+                        bottom: ${bottom}%;
+                    `;
+                    stone.title = `化作春泥于 ${new Date(memory.timestamp).toLocaleDateString('zh-CN')}`;
+                    container.appendChild(stone);
+                });
+            }
+
+            updateFertilityCounter() {
+                const countEl = document.getElementById('compostCount');
+                if (countEl) {
+                    countEl.textContent = this.data.soilCompostCount;
+                }
+            }
+
+            renderWeeds() {
+                const container = document.getElementById('weedsContainer');
+                container.innerHTML = '';
+
+                this.data.weeds.forEach((weed, index) => {
+                    const left = 8 + (index * 18) + (Math.random() * 8);
+                    const weedEl = document.createElement('div');
+                    weedEl.className = 'weed';
+                    weedEl.style.left = `${left}%`;
+                    weedEl.title = `${weed.title}: ${weed.reason}`;
+                    weedEl.onclick = () => this.openWeedDetail(weed.id);
+                    weedEl.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C12 2 7 7 7 11C7 15 12 19 12 19C12 19 17 15 17 11C17 7 12 2 12 2Z" fill="#1a1a1a"/>
+                            <path d="M7 11L4 16" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M17 11L20 16" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M12 19V23" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                    `;
+                    container.appendChild(weedEl);
+                });
+            }
+
+            addWeed(title, reason) {
+                const weed = {
+                    id: Date.now() + Math.random(),
+                    title,
+                    reason,
+                    createdAt: Date.now(),
+                    steps: {
+                        review: false,
+                        repent: false,
+                        promise: false,
+                        remedy: false
+                    }
+                };
+                this.data.weeds.push(weed);
+                this.saveData();
+            }
+
+            openWeedDetail(weedId) {
+                const weed = this.data.weeds.find(w => w.id === weedId);
+                if (!weed) return;
+
+                const content = document.getElementById('weedContent');
+                content.innerHTML = `
+                    <div class="weed-steps">
+                        <p style="margin-bottom: 16px;"><strong>${weed.title}</strong><br><small style="color: #6B7280;">${weed.reason}</small></p>
+                        <div class="weed-step ${weed.steps.review ? 'completed' : ''}" onclick="app.toggleWeedStep('${weedId}', 'review')">
+                            <div class="weed-step-title">${weed.steps.review ? '✓' : '1'} 回顾动机</div>
+                            <div class="weed-step-desc">回想当时为什么这么做？</div>
+                        </div>
+                        <div class="weed-step ${weed.steps.repent ? 'completed' : ''}" onclick="app.toggleWeedStep('${weedId}', 'repent')">
+                            <div class="weed-step-title">${weed.steps.repent ? '✓' : '2'} 诚恳忏悔</div>
+                            <div class="weed-step-desc">承认错误，承担后果</div>
+                        </div>
+                        <div class="weed-step ${weed.steps.promise ? 'completed' : ''}" onclick="app.toggleWeedStep('${weedId}', 'promise')">
+                            <div class="weed-step-title">${weed.steps.promise ? '✓' : '3'} 承诺不再犯</div>
+                            <div class="weed-step-desc">下定决心，不再重蹈覆辙</div>
+                        </div>
+                        <div class="weed-step ${weed.steps.remedy ? 'completed' : ''}" onclick="app.toggleWeedStep('${weedId}', 'remedy')">
+                            <div class="weed-step-title">${weed.steps.remedy ? '✓' : '4'} 补偿行动</div>
+                            <div class="weed-step-desc">做相反的善行来平衡</div>
+                        </div>
+                        ${this.isWeedComplete(weed) ? `
+                            <button class="btn btn-primary" style="width: 100%; margin-top: 8px;" onclick="app.clearWeed('${weedId}')">✓ 清除杂草</button>
+                        ` : ''}
+                    </div>
+                `;
+                this.openModal('weedModal');
+            }
+
+            toggleWeedStep(weedId, step) {
+                const weed = this.data.weeds.find(w => w.id == weedId);
+                if (!weed) return;
+
+                weed.steps[step] = !weed.steps[step];
+                this.saveData();
+                this.openWeedDetail(weedId);
+            }
+
+            isWeedComplete(weed) {
+                return weed.steps.review && weed.steps.repent && weed.steps.promise && weed.steps.remedy;
+            }
+
+            clearWeed(weedId) {
+                this.data.weeds = this.data.weeds.filter(w => w.id != weedId);
+                this.saveData();
+                this.render();
+                this.closeModal('weedModal');
+            }
+
+            renderGoalsList() {
+                const list = document.getElementById('goalsList');
+
+                if (this.data.goals.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><p>还没有目标，创建一个吧！</p></div>';
+                    return;
+                }
+
+                list.innerHTML = this.data.goals.map(goal => {
+                    const sowCount = this.getGoalSowCount(goal.id);
+                    const categoryColor = this.getCategoryColor(goal.category);
+
+                    return `
+                        <div class="goal-item" onclick="app.viewGoalRecords('${goal.id}')">
+                            <div class="goal-header">
+                                <div class="goal-category-dot" style="background: ${categoryColor};"></div>
+                                <div class="goal-title">${goal.title}</div>
+                            </div>
+                            <div class="goal-stats">
+                                <span class="goal-stat growth">📈 ${goal.growth}</span>
+                                <span class="goal-stat vitality">⚡ ${goal.vitality}%</span>
+                                <span class="goal-stat seeds">🌱 ${sowCount}次</span>
+                            </div>
+                            <button class="goal-delete" onclick="event.stopPropagation(); app.deleteGoal('${goal.id}')">&times;</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            viewGoalRecords(goalId) {
+                const goal = this.data.goals.find(g => g.id === goalId);
+                if (!goal) return;
+
+                const records = this.data.records.filter(r => r.goalId === goalId);
+                const recentDiv = document.getElementById('recentRecords');
+
+                if (records.length === 0) {
+                    recentDiv.innerHTML = '<div class="empty-state"><p>还没有播种记录</p></div>';
+                } else {
+                    recentDiv.innerHTML = `
+                        <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #374151;">最近的播种</h3>
+                        <div class="record-list">
+                            ${records.slice(-5).reverse().map(r => `
+                                <div class="record-item">
+                                    <div class="record-date">${new Date(r.createdAt).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                                    <div class="record-partner">👤 帮助 ${r.partner}</div>
+                                    <div class="record-action">${r.action}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                this.openModal('sowModal');
+            }
+
+            openHistoryModal() {
+                this.closeModal('recordsModal'); // 关闭记录选择模态框
+                this.historyPage = 0;
+                this.renderHistoryList();
+                this.openModal('historyModal');
+            }
+
+            renderHistoryList() {
+                const listContainer = document.getElementById('historyRecordList');
+                const paginationContainer = document.getElementById('historyPagination');
+
+                if (this.data.records.length === 0) {
+                    listContainer.innerHTML = '<div class="empty-state"><p>还没有善行记录</p></div>';
+                    paginationContainer.innerHTML = '';
+                    return;
+                }
+
+                const sortedRecords = [...this.data.records].sort((a, b) => b.createdAt - a.createdAt);
+                const totalPages = Math.ceil(sortedRecords.length / this.recordsPerPage);
+                const startIndex = this.historyPage * this.recordsPerPage;
+                const endIndex = startIndex + this.recordsPerPage;
+                const pageRecords = sortedRecords.slice(startIndex, endIndex);
+
+                listContainer.innerHTML = pageRecords.map(r => {
+                    const goal = this.data.goals.find(g => g.id === r.goalId);
+                    const goalTitle = goal ? goal.title : '已删除的目标';
+                    const dateStr = new Date(r.createdAt).toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    return `
+                        <div class="record-item">
+                            <button class="record-delete" onclick="app.deleteRecord('${r.id}')" title="删除记录">&times;</button>
+                            <button class="record-edit" onclick="app.openEditRecordModal('${r.id}')" title="编辑记录">✏️</button>
+                            <div class="record-date">${dateStr}</div>
+                            <div class="record-partner">👤 帮助 ${r.partner}</div>
+                            <div class="record-action">${r.action}</div>
+                            <div class="record-goal">🎯 ${goalTitle}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                paginationContainer.innerHTML = `
+                    <button class="pagination-btn" onclick="app.historyPrevPage()" ${this.historyPage === 0 ? 'disabled' : ''}>
+                        ← 上一页
+                    </button>
+                    <span class="pagination-info">第 ${this.historyPage + 1} / ${totalPages} 页 · 共 ${sortedRecords.length} 条</span>
+                    <button class="pagination-btn" onclick="app.historyNextPage(${totalPages})" ${this.historyPage >= totalPages - 1 ? 'disabled' : ''}>
+                        下一页 →
+                    </button>
+                `;
+            }
+
+            historyPrevPage() {
+                if (this.historyPage > 0) {
+                    this.historyPage--;
+                    this.renderHistoryList();
+                }
+            }
+
+            historyNextPage(totalPages) {
+                if (this.historyPage < totalPages - 1) {
+                    this.historyPage++;
+                    this.renderHistoryList();
+                }
+            }
+
+            deleteRecord(recordId) {
+                if (!confirm('确定要删除这条善行记录吗？')) return;
+
+                const record = this.data.records.find(r => r.id == recordId);
+                if (record) {
+                    const goal = this.data.goals.find(g => g.id === record.goalId);
+                    if (goal) {
+                        goal.growth = Math.max(0, goal.growth - 1);
+                    }
+                }
+
+                this.data.records = this.data.records.filter(r => r.id != recordId);
+                this.saveData();
+                this.render();
+                this.renderHistoryList();
+            }
+
+            // 打开编辑善行记录模态框
+            openEditRecordModal(recordId) {
+                const record = this.data.records.find(r => r.id == recordId);
+                if (!record) return;
+
+                document.getElementById('editRecordId').value = record.id;
+                document.getElementById('editRecordPartner').value = record.partner;
+                document.getElementById('editRecordAction').value = record.action;
+
+                const select = document.getElementById('editRecordGoal');
+                select.innerHTML = this.data.goals.map(g =>
+                    `<option value="${g.id}" ${g.id === record.goalId ? 'selected' : ''}>${g.title}</option>`
+                ).join('');
+
+                this.openModal('editRecordModal');
+            }
+
+            // 保存善行记录编辑
+            saveRecordEdit(event) {
+                event.preventDefault();
+
+                const recordId = parseInt(document.getElementById('editRecordId').value);
+                const goalId = document.getElementById('editRecordGoal').value;
+                const partner = document.getElementById('editRecordPartner').value.trim();
+                const action = document.getElementById('editRecordAction').value.trim();
+
+                const record = this.data.records.find(r => r.id == recordId);
+                if (!record) return;
+
+                // 如果目标改变了，需要更新原目标和新目标的growth
+                if (record.goalId !== goalId) {
+                    const oldGoal = this.data.goals.find(g => g.id === record.goalId);
+                    if (oldGoal) {
+                        oldGoal.growth = Math.max(0, oldGoal.growth - 1);
+                    }
+                    const newGoal = this.data.goals.find(g => g.id === goalId);
+                    if (newGoal) {
+                        newGoal.growth += 1;
+                    }
+                }
+
+                record.goalId = goalId;
+                record.partner = partner;
+                record.action = action;
+
+                this.saveData();
+                this.render();
+                this.renderHistoryList();
+                this.closeModal('editRecordModal');
+            }
+
+            // 打开冥想历史记录
+            openMeditationHistoryModal() {
+                this.closeModal('recordsModal'); // 关闭记录选择模态框
+                this.meditationHistoryPage = 0;
+                this.renderMeditationHistoryList();
+                this.openModal('meditationHistoryModal');
+            }
+
+            renderMeditationHistoryList() {
+                const listContainer = document.getElementById('meditationHistoryList');
+                const paginationContainer = document.getElementById('meditationHistoryPagination');
+
+                if (this.data.meditations.length === 0) {
+                    listContainer.innerHTML = '<div class="empty-state"><p>还没有冥想记录<br><small>完成冥想后会自动记录</small></p></div>';
+                    paginationContainer.innerHTML = '';
+                    return;
+                }
+
+                const sortedRecords = [...this.data.meditations].sort((a, b) => b.createdAt - a.createdAt);
+                const totalPages = Math.ceil(sortedRecords.length / this.recordsPerPage);
+                const startIndex = this.meditationHistoryPage * this.recordsPerPage;
+                const endIndex = startIndex + this.recordsPerPage;
+                const pageRecords = sortedRecords.slice(startIndex, endIndex);
+
+                listContainer.innerHTML = pageRecords.map(r => {
+                    const dateStr = new Date(r.createdAt).toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    const minutes = Math.floor(r.duration / 60);
+                    const seconds = r.duration % 60;
+
+                    return `
+                        <div class="meditation-record-item">
+                            <button class="record-delete" onclick="app.deleteMeditation('${r.id}')" title="删除记录">&times;</button>
+                            <button class="record-edit" onclick="app.openEditMeditationModal('${r.id}')" title="编辑记录">✏️</button>
+                            <div class="meditation-record-date">${dateStr}</div>
+                            <div class="meditation-record-duration">☕ 冥想时长：${minutes}分${seconds}秒</div>
+                            <div class="meditation-record-streak">🔥 连续冥想：${r.streakDays} 天</div>
+                        </div>
+                    `;
+                }).join('');
+
+                paginationContainer.innerHTML = `
+                    <button class="pagination-btn" onclick="app.meditationHistoryPrevPage()" ${this.meditationHistoryPage === 0 ? 'disabled' : ''}>
+                        ← 上一页
+                    </button>
+                    <span class="pagination-info">第 ${this.meditationHistoryPage + 1} / ${totalPages} 页 · 共 ${sortedRecords.length} 条</span>
+                    <button class="pagination-btn" onclick="app.meditationHistoryNextPage(${totalPages})" ${this.meditationHistoryPage >= totalPages - 1 ? 'disabled' : ''}>
+                        下一页 →
+                    </button>
+                `;
+            }
+
+            meditationHistoryPrevPage() {
+                if (this.meditationHistoryPage > 0) {
+                    this.meditationHistoryPage--;
+                    this.renderMeditationHistoryList();
+                }
+            }
+
+            meditationHistoryNextPage(totalPages) {
+                if (this.meditationHistoryPage < totalPages - 1) {
+                    this.meditationHistoryPage++;
+                    this.renderMeditationHistoryList();
+                }
+            }
+
+            // 删除冥想记录
+            deleteMeditation(meditationId) {
+                if (!confirm('确定要删除这条冥想记录吗？')) return;
+                this.data.meditations = this.data.meditations.filter(m => m.id != meditationId);
+                this.saveData();
+                this.renderMeditationHistoryList();
+            }
+
+            // 打开编辑冥想记录模态框
+            openEditMeditationModal(meditationId) {
+                const meditation = this.data.meditations.find(m => m.id == meditationId);
+                if (!meditation) return;
+
+                document.getElementById('editMeditationId').value = meditation.id;
+                document.getElementById('editMeditationDuration').value = meditation.duration;
+
+                // 转换时间为datetime-local格式
+                const date = new Date(meditation.createdAt);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                document.getElementById('editMeditationTime').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+                this.openModal('editMeditationModal');
+            }
+
+            // 保存冥想记录编辑
+            saveMeditationEdit(event) {
+                event.preventDefault();
+
+                const meditationId = parseInt(document.getElementById('editMeditationId').value);
+                const duration = parseInt(document.getElementById('editMeditationDuration').value);
+                const timeStr = document.getElementById('editMeditationTime').value;
+
+                const meditation = this.data.meditations.find(m => m.id == meditationId);
+                if (!meditation) return;
+
+                meditation.duration = duration;
+                meditation.createdAt = new Date(timeStr).getTime();
+
+                this.saveData();
+                this.renderMeditationHistoryList();
+                this.closeModal('editMeditationModal');
+            }
+
+            // 打开帮助模态框
+            openHelpModal() {
+                this.openModal('helpModal');
+            }
+
+            // 打开浇水模态框
+            openWateringModal() {
+                this.openModal('wateringModal');
+            }
+
+            // 带转场动画开始冥想
+            startMeditationWithTransition(seconds) {
+                this.closeModal('wateringModal');
+
+                // 显示暖色调转场
+                const transition = document.getElementById('wateringTransition');
+                transition.classList.add('active');
+
+                // 3秒后进入冥想室
+                setTimeout(() => {
+                    transition.classList.remove('active');
+                    this.prepareMeditationText();
+                    this.meditationTimeLeft = seconds;
+                    this.meditationStartTime = Date.now();
+                    document.getElementById('meditationRoom').classList.add('active');
+                    this.updateTimerDisplay();
+                    this.startTimer();
+                }, 3000);
+            }
+
+            // 从浇水打开自定义时间
+            openCustomTimeFromWatering() {
+                this.closeModal('wateringModal');
+                this.openModal('customTimeModal');
+            }
+
+            // 自定义时间开始冥想（带转场）
+            startMeditationWithCustomTime(event) {
+                event.preventDefault();
+
+                const minutes = parseInt(document.getElementById('customMinutes').value);
+
+                if (minutes < 1 || minutes > 120) {
+                    alert('请输入 1-120 分钟之间的时间！');
+                    return;
+                }
+
+                const seconds = minutes * 60;
+                this.closeModal('customTimeModal');
+
+                // 显示暖色调转场
+                const transition = document.getElementById('wateringTransition');
+                transition.classList.add('active');
+
+                // 3秒后进入冥想室
+                setTimeout(() => {
+                    transition.classList.remove('active');
+                    this.prepareMeditationText();
+                    this.meditationTimeLeft = seconds;
+                    this.meditationStartTime = Date.now();
+                    document.getElementById('meditationRoom').classList.add('active');
+                    this.updateTimerDisplay();
+                    this.startTimer();
+                }, 3000);
+            }
+
+            // 打开冥想时间选择模态框（保留用于其他调用）
+            openMeditationTimeModal() {
+                this.openWateringModal();
+            }
+
+            // 带指定时间开始冥想（保留用于其他调用）
+            startMeditationWithTime(seconds) {
+                this.startMeditationWithTransition(seconds);
+            }
+
+            // 打开自定义时间模态框（兼容旧调用）
+            openCustomRandomModal() {
+                this.openCustomTimeFromWatering();
+            }
+
+            openModal(modalId) {
+                document.getElementById(modalId).classList.add('active');
+            }
+
+            closeModal(modalId) {
+                document.getElementById(modalId).classList.remove('active');
+            }
+
+            openGoalsModal() {
+                this.renderGoalsList();
+                this.openModal('goalsModal');
+            }
+
+            openCreateGoalModal() {
+                document.getElementById('createGoalForm').reset();
+                this.closeModal('goalsModal');
+                this.openModal('createGoalModal');
+            }
+
+            createGoal(event) {
+                event.preventDefault();
+
+                const title = document.getElementById('goalTitle').value.trim();
+                const category = document.getElementById('goalCategory').value;
+
+                const goal = {
+                    id: Date.now().toString(),
+                    title,
+                    category,
+                    growth: 0,
+                    vitality: 100,
+                    createdAt: Date.now()
+                };
+
+                this.data.goals.push(goal);
+                this.saveData();
+                this.render();
+                this.closeModal('createGoalModal');
+            }
+
+            deleteGoal(goalId) {
+                if (!confirm('确定要删除这个目标吗？相关的播种记录也会被删除。')) return;
+
+                this.data.goals = this.data.goals.filter(g => g.id !== goalId);
+                this.data.records = this.data.records.filter(r => r.goalId !== goalId);
+                this.saveData();
+                this.render();
+                this.renderGoalsList();
+            }
+
+            openSowModal() {
+                if (this.data.goals.length === 0) {
+                    alert('请先创建目标！');
+                    this.openCreateGoalModal();
+                    return;
+                }
+
+                const select = document.getElementById('sowGoal');
+                select.innerHTML = this.data.goals.map(g =>
+                    `<option value="${g.id}">${g.title}</option>`
+                ).join('');
+
+                document.getElementById('sowForm').reset();
+                document.getElementById('recentRecords').innerHTML = '';
+                this.openModal('sowModal');
+            }
+
+            showSowAnimation(goalId) {
+                const plant = document.getElementById(`plant-${goalId}`);
+                if (!plant) return;
+
+                const rect = plant.getBoundingClientRect();
+                const animation = document.createElement('div');
+                animation.className = 'sow-animation';
+                animation.textContent = '+1 🌱';
+                animation.style.left = `${rect.left + rect.width / 2}px`;
+                animation.style.top = `${rect.top}px`;
+                animation.style.position = 'fixed';
+                document.body.appendChild(animation);
+
+                setTimeout(() => animation.remove(), 1500);
+            }
+
+            showSuccessToast() {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                toast.className = 'success-toast';
+                toast.innerHTML = `
+                    <div class="emoji">🌟</div>
+                    <div class="title">播种成功！</div>
+                    <div class="message">记得为此感到开心!</div>
+                `;
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.animation = 'toastOut 0.3s ease-out forwards';
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+            }
+
+            recordSowing(event) {
+                event.preventDefault();
+
+                const goalId = document.getElementById('sowGoal').value;
+                const partner = document.getElementById('sowPartner').value.trim();
+                const action = document.getElementById('sowAction').value.trim();
+
+                const record = {
+                    id: Date.now(),
+                    goalId,
+                    partner,
+                    action,
+                    createdAt: Date.now()
+                };
+
+                this.data.records.push(record);
+
+                const goal = this.data.goals.find(g => g.id === goalId);
+                if (goal) {
+                    goal.growth += 1;
+                }
+
+                this.saveData();
+
+                setTimeout(() => {
+                    this.showSowAnimation(goalId);
+                    this.showSuccessToast();
+                }, 100);
+
+                this.closeModal('sowModal');
+                this.render();
+            }
+
+            openWeedModal() {
+                if (this.data.weeds.length === 0) {
+                    document.getElementById('weedContent').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">✨</div>
+                            <p>花园很干净</p>
+                            <small>点击下方按钮记录负面言行，会产生杂草</small>
+                            <button class="btn btn-danger" style="width: 100%; margin-top: 12px;" onclick="app.recordNegative()">记录负面言行</button>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('weedContent').innerHTML = `
+                        <button class="btn btn-danger" style="width: 100%; margin-bottom: 16px;" onclick="app.recordNegative()">+ 记录负面言行</button>
+                        <p style="text-align: center; color: #9CA3AF; font-size: 14px;">点击花园中的黑色杂草开始清理</p>
+                    `;
+                }
+                this.openModal('weedModal');
+            }
+
+            recordNegative() {
+                const title = prompt('记录你的负面言行：');
+                if (!title) return;
+
+                const reason = prompt('原因/反思：') || '未记录';
+                this.addWeed(title, reason);
+
+                this.data.goals.forEach(g => {
+                    g.vitality = Math.max(0, g.vitality - 10);
+                });
+
+                this.saveData();
+                this.render();
+                this.closeModal('weedModal');
+            }
+
+            prepareMeditationText() {
+                // 只显示格西老师的智慧金句，不显示用户个人内容
+                this.meditationRecords = [...WISDOM_QUOTES];
+                this.currentTextIndex = 0;
+                this.updateMeditationText();
+            }
+
+            updateMeditationText() {
+                const textEl = document.getElementById('meditationText');
+                if (this.meditationRecords.length > 0) {
+                    textEl.textContent = this.meditationRecords[this.currentTextIndex];
+                }
+            }
+
+            skipMeditationText() {
+                this.currentTextIndex = (this.currentTextIndex + 1) % this.meditationRecords.length;
+                this.updateMeditationText();
+            }
+
+            startMeditation() {
+                this.prepareMeditationText();
+                this.meditationTimeLeft = 300;
+                this.meditationStartTime = Date.now();
+                document.getElementById('meditationRoom').classList.add('active');
+                this.updateTimerDisplay();
+                this.startTimer();
+            }
+
+            startTimer() {
+                if (this.meditationTimer) {
+                    clearInterval(this.meditationTimer);
+                }
+
+                this.meditationTimer = setInterval(() => {
+                    this.meditationTimeLeft--;
+                    this.updateTimerDisplay();
+
+                    if (this.meditationTimeLeft <= 0) {
+                        this.finishMeditation();
+                    }
+                }, 1000);
+            }
+
+            updateTimerDisplay() {
+                const minutes = Math.floor(this.meditationTimeLeft / 60);
+                const seconds = this.meditationTimeLeft % 60;
+                document.getElementById('meditationTimer').textContent =
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            finishMeditation() {
+                if (this.meditationTimer) {
+                    clearInterval(this.meditationTimer);
+                    this.meditationTimer = null;
+                }
+
+                const now = Date.now();
+                const lastMeditation = this.data.lastMeditationTime;
+                const actualDuration = Math.floor((now - this.meditationStartTime) / 1000);
+
+                if (lastMeditation) {
+                    const lastDate = new Date(lastMeditation).toDateString();
+                    const today = new Date(now).toDateString();
+                    if (lastDate !== today) {
+                        const yesterday = new Date(now - 86400000).toDateString();
+                        if (lastDate === yesterday) {
+                            this.data.consecutiveMeditationDays++;
+                        } else {
+                            this.data.consecutiveMeditationDays = 1;
+                        }
+                    }
+                } else {
+                    this.data.consecutiveMeditationDays = 1;
+                }
+
+                this.data.lastMeditationTime = now;
+
+                // 记录冥想
+                this.data.meditations.push({
+                    id: Date.now(),
+                    createdAt: now,
+                    duration: actualDuration,
+                    streakDays: this.data.consecutiveMeditationDays
+                });
+
+                this.data.goals.forEach(g => {
+                    g.vitality = Math.min(100, g.vitality + 30);
+                });
+
+                this.saveData();
+                this.render();
+
+                document.getElementById('meditationRoom').classList.remove('active');
+            }
+
+            // 翻土空间相关方法
+            openTillingSpaceModal() {
+                this.openModal('tillingSpaceModal');
+            }
+
+            openBreathingRoomModal() {
+                this.closeModal('tillingSpaceModal');
+                this.openModal('breathingRoomModal');
+            }
+
+            openFreeWritingModal() {
+                this.closeModal('tillingSpaceModal');
+                this.openModal('freeWritingModal');
+            }
+
+            // 呼吸观察室
+            breathingTimer = null;
+            breathingTimeLeft = 180;
+            breathingCycle = 0; // 呼吸周期
+
+            startBreathing(seconds) {
+                this.breathingTimeLeft = seconds;
+                this.breathingCycle = 0;
+                this.closeModal('breathingRoomModal');
+
+                // 显示冷色调转场
+                const transition = document.getElementById('tillingTransition');
+                transition.classList.add('active');
+
+                // 3秒后进入呼吸观察室
+                setTimeout(() => {
+                    transition.classList.remove('active');
+                    document.getElementById('breathingRoom').classList.add('active');
+                    this.updateBreathingTimer();
+                    this.updateBreathingInstruction();
+                    this.startBreathingTimer();
+                }, 3000);
+            }
+
+            startBreathingTimer() {
+                if (this.breathingTimer) {
+                    clearInterval(this.breathingTimer);
+                }
+
+                this.breathingTimer = setInterval(() => {
+                    this.breathingTimeLeft--;
+                    this.updateBreathingTimer();
+
+                    // 每4秒更新一次呼吸提示
+                    if (this.breathingTimeLeft % 4 === 0) {
+                        this.breathingCycle++;
+                        this.updateBreathingInstruction();
+                    }
+
+                    if (this.breathingTimeLeft <= 0) {
+                        this.playBowlSound();
+                        this.finishBreathing();
+                    }
+                }, 1000);
+            }
+
+            updateBreathingTimer() {
+                const minutes = Math.floor(this.breathingTimeLeft / 60);
+                const seconds = this.breathingTimeLeft % 60;
+                document.getElementById('breathingTimer').textContent =
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            updateBreathingInstruction() {
+                const instructionEl = document.getElementById('breathingInstruction');
+                const phases = ['吸气...', '保持...', '呼气...', '保持...'];
+                instructionEl.textContent = phases[this.breathingCycle % 4];
+            }
+
+            playBowlSound() {
+                // 使用 Web Audio API 生成颂钵音效
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.frequency.value = 220; // 低频
+                    oscillator.type = 'sine';
+
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 2);
+
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 2);
+                } catch (e) {
+                    console.log('Audio not supported');
+                }
+            }
+
+            finishBreathing() {
+                if (this.breathingTimer) {
+                    clearInterval(this.breathingTimer);
+                    this.breathingTimer = null;
+                }
+
+                this.data.lastBreathingTime = Date.now();
+
+                // 呼吸练习增加植物活力
+                this.data.goals.forEach(g => {
+                    g.vitality = Math.min(100, g.vitality + 10);
+                });
+
+                this.saveData();
+                this.render();
+                document.getElementById('breathingRoom').classList.remove('active');
+            }
+
+            // 自由书写区
+            freeWritingTimer = null;
+            freeWritingTimeLeft = 600;
+            freeWritingFadeTimer = null;
+            backspaceDisabled = false;
+            autoFadeEnabled = false;
+
+            startFreeWriting() {
+                const minutes = parseInt(document.getElementById('freeWritingMinutes').value) || 10;
+                this.backspaceDisabled = document.getElementById('disableBackspace').checked;
+                this.autoFadeEnabled = document.getElementById('autoFadeText').checked;
+
+                this.freeWritingTimeLeft = minutes * 60;
+                this.closeModal('freeWritingModal');
+
+                const writingRoom = document.getElementById('freeWritingRoom');
+                const textarea = document.getElementById('freeWritingArea');
+                textarea.value = '';
+                textarea.classList.remove('faded');
+
+                writingRoom.classList.add('active');
+                this.updateFreeWritingTimer();
+
+                // 禁用/启用回删键
+                if (this.backspaceDisabled) {
+                    textarea.addEventListener('keydown', this.blockBackspace);
+                }
+
+                // 自动淡化功能
+                if (this.autoFadeEnabled) {
+                    textarea.addEventListener('input', this.handleAutoFade);
+                }
+
+                this.startFreeWritingTimer();
+            }
+
+            startFreeWritingTimer() {
+                if (this.freeWritingTimer) {
+                    clearInterval(this.freeWritingTimer);
+                }
+
+                this.freeWritingTimer = setInterval(() => {
+                    this.freeWritingTimeLeft--;
+                    this.updateFreeWritingTimer();
+
+                    if (this.freeWritingTimeLeft <= 0) {
+                        this.playBowlSound();
+                        this.endFreeWriting();
+                    }
+                }, 1000);
+            }
+
+            updateFreeWritingTimer() {
+                const minutes = Math.floor(this.freeWritingTimeLeft / 60);
+                const seconds = this.freeWritingTimeLeft % 60;
+                document.getElementById('freeWritingTimer').textContent =
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            blockBackspace(e) {
+                if (e.key === 'Backspace') {
+                    e.preventDefault();
+                }
+            }
+
+            handleAutoFade(e) {
+                const textarea = e.target;
+                const value = textarea.value;
+                const cursorPos = textarea.selectionStart;
+
+                // 简单的淡化逻辑：让之前的文字变淡
+                setTimeout(() => {
+                    textarea.classList.add('faded');
+                }, 3000);
+            }
+
+            finishFreeWritingEarly() {
+                if (confirm('确定要提前完成吗？')) {
+                    this.endFreeWriting();
+                }
+            }
+
+            endFreeWriting() {
+                if (this.freeWritingTimer) {
+                    clearInterval(this.freeWritingTimer);
+                    this.freeWritingTimer = null;
+                }
+
+                const textarea = document.getElementById('freeWritingArea');
+                textarea.disabled = true; // 锁定输入框
+
+                // 移除事件监听
+                textarea.removeEventListener('keydown', this.blockBackspace);
+                textarea.removeEventListener('input', this.handleAutoFade);
+
+                // 更新状态
+                document.getElementById('freeWritingStatus').textContent = '时间到！请选择释放方式';
+                document.getElementById('freeWritingActions').style.display = 'none';
+                document.getElementById('burnActions').style.display = 'flex';
+            }
+
+            burnToSoil() {
+                const textarea = document.getElementById('freeWritingArea');
+                const text = textarea.value;
+
+                // 创建沉降动画 - 文字沉入土壤
+                this.createSinkingAnimation(textarea, text);
+
+                // 1.5秒后显示成功提示
+                setTimeout(() => {
+                    this.showReleaseSuccess();
+                }, 1500);
+
+                // 记录完成时间
+                this.data.lastFreeWritingTime = Date.now();
+
+                // 增加化作春泥次数
+                this.data.soilCompostCount++;
+
+                // 保存记忆痕迹（只保存时间戳和长度，不保存内容）
+                this.data.soilMemory.push({
+                    timestamp: Date.now(),
+                    length: text.length
+                });
+
+                // 最多保留30个记忆
+                if (this.data.soilMemory.length > 30) {
+                    this.data.soilMemory = this.data.soilMemory.slice(-30);
+                }
+
+                // 自由书写增加植物活力 - 根据化作春泥次数有额外加成
+                const vitalityBonus = 15 + Math.min(10, Math.floor(this.data.soilCompostCount / 5) * 2);
+                this.data.goals.forEach(g => {
+                    g.vitality = Math.min(100, g.vitality + vitalityBonus);
+                    // 每次化作春泥也给植物添加额外生长
+                    g.growth += 0.5;
+                });
+
+                this.saveData();
+                this.render();
+            }
+
+            createSinkingAnimation(textarea, text) {
+                const rect = textarea.getBoundingClientRect();
+                const room = document.getElementById('freeWritingRoom');
+                const roomRect = room.getBoundingClientRect();
+
+                // 将文字分成字符并创建沉降动画
+                const chars = text.split('');
+                const container = document.createElement('div');
+                container.className = 'dissolve-container';
+                container.style.cssText = `
+                    position: absolute;
+                    top: ${rect.top - roomRect.top}px;
+                    left: ${rect.left - roomRect.left}px;
+                    width: ${rect.width}px;
+                    height: ${rect.height}px;
+                    pointer-events: none;
+                    overflow: visible;
+                    font-size: 18px;
+                    line-height: 1.8;
+                    color: rgba(255, 255, 255, 0.9);
+                    z-index: 10;
+                `;
+
+                // 隐藏原textarea
+                textarea.style.opacity = '0';
+
+                // 计算土壤位置（屏幕底部）
+                const soilY = roomRect.height - 80;
+
+                // 创建每个字符的沉降动画
+                chars.forEach((char, index) => {
+                    if (char === '\n' || char === ' ') {
+                        if (char === '\n') {
+                            container.appendChild(document.createElement('br'));
+                        } else {
+                            container.appendChild(document.createTextNode(' '));
+                        }
+                        return;
+                    }
+
+                    const span = document.createElement('span');
+                    span.textContent = char;
+                    span.className = 'char-dissolve';
+                    span.style.cssText = `
+                        display: inline-block;
+                        position: relative;
+                    `;
+
+                    // 随机沉降延迟和轨迹
+                    const delay = Math.random() * 0.8;
+                    const duration = 1.2 + Math.random() * 0.6;
+                    const sinkDistance = soilY - (rect.top - roomRect.top) + Math.random() * 50;
+
+                    span.style.setProperty('--delay', `${delay}s`);
+                    span.style.setProperty('--duration', `${duration}s`);
+                    span.style.setProperty('--sink-y', `${sinkDistance}px`);
+                    span.style.setProperty('--rotate', `${(Math.random() - 0.5) * 30}deg`);
+
+                    // 应用沉降动画
+                    span.animate([
+                        {
+                            opacity: 1,
+                            transform: 'translateY(0) rotate(0deg)',
+                            color: 'rgba(255, 255, 255, 0.9)'
+                        },
+                        {
+                            opacity: 0.8,
+                            transform: `translateY(${sinkDistance * 0.3}px) rotate(5deg)`,
+                            color: '#98D8AA',
+                            offset: 0.3
+                        },
+                        {
+                            opacity: 0.4,
+                            transform: `translateY(${sinkDistance * 0.6}px) rotate(-3deg)`,
+                            color: '#8B7355',
+                            offset: 0.6
+                        },
+                        {
+                            opacity: 0,
+                            transform: `translateY(${sinkDistance}px) rotate(0deg)`,
+                            color: '#6B3E0A',
+                            offset: 1
+                        }
+                    ], {
+                        duration: duration * 1000,
+                        delay: delay * 1000,
+                        easing: 'ease-in',
+                        fill: 'forwards'
+                    });
+
+                    container.appendChild(span);
+                });
+
+                room.appendChild(container);
+
+                // 同时添加土壤养分粒子（从底部升起）
+                for (let i = 0; i < 20; i++) {
+                    setTimeout(() => {
+                        const particle = document.createElement('div');
+                        particle.className = 'particle';
+                        const size = Math.random() * 6 + 3;
+                        const startX = Math.random() * rect.width;
+                        const startXPos = rect.left - roomRect.left + startX;
+
+                        particle.style.cssText = `
+                            width: ${size}px;
+                            height: ${size}px;
+                            left: ${startXPos}px;
+                            top: ${soilY}px;
+                            background: radial-gradient(circle, rgba(152, 216, 170, 0.8), rgba(152, 216, 170, 0));
+                            --tx: 0px;
+                            --ty: ${-Math.random() * 80 - 20}px;
+                        `;
+
+                        room.appendChild(particle);
+
+                        setTimeout(() => particle.remove(), 1500);
+                    }, i * 50);
+                }
+
+                // 清理容器
+                setTimeout(() => {
+                    container.remove();
+                    textarea.style.opacity = '1';
+                    textarea.value = '';
+                }, 2500);
+            }
+
+            showReleaseSuccess() {
+                const releaseDiv = document.createElement('div');
+                releaseDiv.className = 'release-success';
+                releaseDiv.innerHTML = `
+                    <div class="icon">🌱</div>
+                    <div class="text">念头化作春泥<br>滋养种子生长</div>
+                `;
+                document.body.appendChild(releaseDiv);
+
+                setTimeout(() => {
+                    releaseDiv.remove();
+                    document.getElementById('freeWritingRoom').classList.remove('active');
+
+                    // 重置状态
+                    document.getElementById('freeWritingStatus').textContent = '书写中...';
+                    document.getElementById('freeWritingActions').style.display = 'flex';
+                    document.getElementById('burnActions').style.display = 'none';
+                    const textarea = document.getElementById('freeWritingArea');
+                    textarea.disabled = false;
+                }, 3000);
+            }
+
+            exportData() {
+                const dataStr = JSON.stringify(this.data, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `seedlab_backup_${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            importData(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+
+                        // 验证数据格式
+                        if (!importedData.goals || !Array.isArray(importedData.goals)) {
+                            alert('导入失败：文件格式不正确');
+                            return;
+                        }
+
+                        if (confirm('导入数据将覆盖当前所有数据，确定要继续吗？')) {
+                            // 合并数据结构，确保所有字段都存在
+                            this.data = {
+                                goals: importedData.goals || [],
+                                records: importedData.records || [],
+                                weeds: importedData.weeds || [],
+                                meditations: importedData.meditations || [],
+                                lastOpenTime: importedData.lastOpenTime || Date.now(),
+                                lastMeditationTime: importedData.lastMeditationTime || null,
+                                consecutiveMeditationDays: importedData.consecutiveMeditationDays || 0
+                            };
+
+                            this.saveData();
+                            this.render();
+                            alert('导入成功！');
+                        }
+                    } catch (err) {
+                        alert('导入失败：文件格式不正确');
+                        console.error(err);
+                    }
+                };
+                reader.readAsText(file);
+
+                // 清空input，允许重复导入同一文件
+                event.target.value = '';
+            }
+
+            render() {
+                this.renderGarden();
+                this.updateWeather();
+            }
+        }
+
+        const app = new SeedLab();
+
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
